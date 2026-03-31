@@ -1,6 +1,8 @@
 import { createContext, useContext, useReducer } from 'react';
 import { initialLoads } from '../data/mockLoads';
 import { initialBookings } from '../data/mockBookings';
+import { initialRequests } from '../data/mockRequests';
+import { initialBids } from '../data/mockBids';
 import { users } from '../data/mockUsers';
 import { INSURANCE_RATE } from '../theme';
 
@@ -13,7 +15,9 @@ const initial = {
   viewParams: {},
   loads: [...initialLoads],
   bookings: [...initialBookings],
-  claims: [], // { id, bookingId, loadId, shipperId, reason, status: pending|approved|rejected, filedAt, resolvedAt, payoutAmount }
+  requests: [...initialRequests],
+  bids: [...initialBids],
+  claims: [],
   users,
 };
 
@@ -22,11 +26,12 @@ let idCounter = 100;
 function reducer(state, action) {
   switch (action.type) {
     case 'SET_ROLE':
-      return { ...state, role: action.role, userId: action.userId, view: action.role === 'owner' ? 'ownerDash' : 'browse' };
+      return { ...state, role: action.role, userId: action.userId, view: action.role === 'owner' ? 'ownerDash' : 'shipperDash' };
 
     case 'NAV':
       return { ...state, view: action.view, viewParams: action.params || {} };
 
+    // ── Owner posts a truck listing (available capacity) ──
     case 'ADD_LOAD': {
       const id = 'L' + (++idCounter);
       const cap = Number(action.load.capacityTonnes) || 0;
@@ -36,6 +41,86 @@ function reducer(state, action) {
       return { ...state, loads: [load, ...state.loads], view: 'ownerDash' };
     }
 
+    // ── Shipper posts a freight request ──
+    case 'ADD_REQUEST': {
+      const id = 'R' + (++idCounter);
+      const tonnes = Number(action.request.tonnes) || 0;
+      if (tonnes <= 0) return state;
+      const req = {
+        ...action.request, id, tonnes,
+        shipperId: state.userId,
+        status: 'open',
+        acceptedBidId: null,
+        createdAt: new Date().toISOString().slice(0, 10),
+      };
+      return { ...state, requests: [req, ...state.requests], view: 'myRequests' };
+    }
+
+    // ── Owner places a bid on a freight request ──
+    case 'PLACE_BID': {
+      const req = state.requests.find(r => r.id === action.requestId);
+      if (!req || req.status !== 'open') return state;
+      // Prevent duplicate bids from same owner
+      if (state.bids.some(b => b.requestId === action.requestId && b.ownerId === state.userId)) return state;
+      const bid = {
+        id: 'BID' + (++idCounter),
+        requestId: action.requestId,
+        ownerId: state.userId,
+        truckId: action.truckId,
+        driverId: action.driverId,
+        ratePerTonne: Number(action.ratePerTonne),
+        status: 'pending',
+        createdAt: new Date().toISOString().slice(0, 10),
+      };
+      return { ...state, bids: [bid, ...state.bids], view: 'ownerDash' };
+    }
+
+    // ── Shipper accepts a bid → creates a booking ──
+    case 'ACCEPT_BID': {
+      const bid = state.bids.find(b => b.id === action.bidId);
+      if (!bid || bid.status !== 'pending') return state;
+      const req = state.requests.find(r => r.id === bid.requestId);
+      if (!req) return state;
+
+      // Create the load from the accepted bid
+      const loadId = 'L' + (++idCounter);
+      const cargoValue = req.tonnes * bid.ratePerTonne;
+      const insured = !!action.insured;
+      const premium = insured ? Math.round(cargoValue * INSURANCE_RATE) : 0;
+
+      const load = {
+        id: loadId, ownerId: bid.ownerId, truckId: bid.truckId, driverId: bid.driverId,
+        origin: req.origin, destination: req.destination, date: req.date,
+        capacityTonnes: req.tonnes, ratePerTonne: bid.ratePerTonne,
+        truckType: '', status: 'booked', bookingId: null,
+      };
+
+      const bookingId = 'B' + (++idCounter);
+      const booking = {
+        id: bookingId, loadId, shipperId: req.shipperId, ownerId: bid.ownerId,
+        status: 'booked', bookedAt: new Date().toISOString().slice(0, 10),
+        escrowAmount: cargoValue, insured, insurancePremium: premium,
+        totalPaid: cargoValue + premium,
+        deliveryConfirmed: false, paidAt: null,
+      };
+
+      load.bookingId = bookingId;
+
+      return {
+        ...state,
+        loads: [load, ...state.loads],
+        bookings: [booking, ...state.bookings],
+        requests: state.requests.map(r => r.id === req.id ? { ...r, status: 'matched', acceptedBidId: bid.id } : r),
+        bids: state.bids.map(b => {
+          if (b.id === bid.id) return { ...b, status: 'accepted' };
+          if (b.requestId === req.id) return { ...b, status: 'declined' };
+          return b;
+        }),
+        view: 'myBookings',
+      };
+    }
+
+    // ── Shipper books a posted truck directly ──
     case 'BOOK_LOAD': {
       const load = state.loads.find(l => l.id === action.loadId);
       if (!load || load.status !== 'posted') return state;
@@ -46,9 +131,7 @@ function reducer(state, action) {
       const booking = {
         id: bid, loadId: action.loadId, shipperId: state.userId, ownerId: load.ownerId,
         status: 'booked', bookedAt: new Date().toISOString().slice(0, 10),
-        escrowAmount: cargoValue,
-        insured,
-        insurancePremium: premium,
+        escrowAmount: cargoValue, insured, insurancePremium: premium,
         totalPaid: cargoValue + premium,
         deliveryConfirmed: false, paidAt: null,
       };
@@ -81,39 +164,29 @@ function reducer(state, action) {
     case 'FILE_CLAIM': {
       const booking = state.bookings.find(b => b.id === action.bookingId);
       if (!booking || !booking.insured) return state;
-      // Can only file on delivered or paid loads
       const load = state.loads.find(l => l.id === booking.loadId);
       if (!load || (load.status !== 'delivered' && load.status !== 'paid')) return state;
-      // Prevent duplicate claims
       if (state.claims.some(c => c.bookingId === action.bookingId)) return state;
       const claim = {
-        id: 'CL' + (++idCounter),
-        bookingId: booking.id,
-        loadId: booking.loadId,
-        shipperId: booking.shipperId,
-        reason: action.reason || 'Cargo damage during transit',
-        status: 'pending',
-        filedAt: new Date().toISOString().slice(0, 10),
-        resolvedAt: null,
-        payoutAmount: booking.escrowAmount, // full cargo value
+        id: 'CL' + (++idCounter), bookingId: booking.id, loadId: booking.loadId,
+        shipperId: booking.shipperId, reason: action.reason || 'Cargo damage',
+        status: 'pending', filedAt: new Date().toISOString().slice(0, 10),
+        resolvedAt: null, payoutAmount: booking.escrowAmount,
       };
       return { ...state, claims: [claim, ...state.claims], view: 'myBookings' };
     }
 
-    case 'RESOLVE_CLAIM': {
-      const approved = action.approved;
+    case 'RESOLVE_CLAIM':
       return {
         ...state,
         claims: state.claims.map(c => c.id === action.claimId ? {
-          ...c,
-          status: approved ? 'approved' : 'rejected',
+          ...c, status: action.approved ? 'approved' : 'rejected',
           resolvedAt: new Date().toISOString().slice(0, 10),
         } : c),
       };
-    }
 
     case 'SWITCH_ROLE':
-      return { ...initial, loads: state.loads, bookings: state.bookings, claims: state.claims };
+      return { ...initial, loads: state.loads, bookings: state.bookings, requests: state.requests, bids: state.bids, claims: state.claims };
 
     default: return state;
   }
