@@ -1,7 +1,9 @@
+import { useState } from 'react';
 import './styles.css';
 import { useApp } from './context/AppContext';
 import RoleSelector from './components/shared/RoleSelector';
 import AppShell from './components/shared/AppShell';
+import DemoWalkthrough from './components/shared/DemoWalkthrough';
 // Owner screens
 import OwnerDashboard from './components/owner/OwnerDashboard';
 import PostLoadForm from './components/owner/PostLoadForm';
@@ -40,15 +42,24 @@ const SCREENS = {
 };
 
 export default function App() {
-  const { state } = useApp();
+  const { state, dispatch } = useApp();
+  const [demoMode, setDemoMode] = useState(false);
 
-  if (!state.role) return <RoleSelector />;
+  if (!state.role && !demoMode) {
+    return <RoleSelector onStartDemo={() => setDemoMode(true)} />;
+  }
 
   const Screen = SCREENS[state.view];
 
   return (
     <AppShell>
       {Screen ? <Screen /> : <div style={{ padding: 40, textAlign: 'center', color: '#8a8070' }}>Screen not found</div>}
+      {demoMode && (
+        <DemoWalkthrough onExit={() => {
+          setDemoMode(false);
+          dispatch({ type: 'SWITCH_ROLE' });
+        }} />
+      )}
     </AppShell>
   );
 }

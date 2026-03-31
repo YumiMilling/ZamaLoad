@@ -3,7 +3,7 @@ import React from 'react';
 import { C, FONT } from '../../theme';
 import { useApp } from '../../context/AppContext';
 
-export default function RoleSelector() {
+export default function RoleSelector({ onStartDemo }) {
   const { dispatch } = useApp();
 
   return (
@@ -145,6 +145,28 @@ export default function RoleSelector() {
           </div>
         </div>
       </button>
+
+      {/* Demo walkthrough */}
+      {onStartDemo && (
+        <>
+          <div style={{ width: '100%', maxWidth: 340, margin: '32px 0 0', borderTop: `1px solid ${C.line}`, paddingTop: 24, textAlign: 'center' }}>
+            <div style={{ fontFamily: FONT.body, fontSize: 13, color: C.dust, marginBottom: 12 }}>
+              First time? See how it works.
+            </div>
+            <button
+              onClick={onStartDemo}
+              style={{
+                width: '100%', padding: '14px 24px',
+                background: C.asphalt, color: C.amber, border: `2px solid ${C.amber}`,
+                cursor: 'pointer', fontFamily: FONT.heading, fontSize: 16, fontWeight: 700,
+                textTransform: 'uppercase', letterSpacing: '.06em',
+              }}
+            >
+              Watch the Demo
+            </button>
+          </div>
+        </>
+      )}
     </div>
   );
 }
