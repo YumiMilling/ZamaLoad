@@ -1,0 +1,12 @@
+export const initialLoads = [
+  { id: 'L01', ownerId: 'O1', origin: 'Lusaka',      destination: 'Choma',       date: '2026-04-05', capacityTonnes: 15, ratePerTonne: 450, truckType: 'Flatbed',      status: 'posted',     bookingId: null },
+  { id: 'L02', ownerId: 'O2', origin: 'Kitwe',       destination: 'Ndola',       date: '2026-04-03', capacityTonnes: 20, ratePerTonne: 200, truckType: 'Tipper',       status: 'posted',     bookingId: null },
+  { id: 'L03', ownerId: 'O1', origin: 'Lusaka',      destination: 'Chipata',     date: '2026-04-08', capacityTonnes: 12, ratePerTonne: 600, truckType: 'Flatbed',      status: 'booked',     bookingId: 'B01' },
+  { id: 'L04', ownerId: 'O4', origin: 'Livingstone',  destination: 'Lusaka',     date: '2026-04-02', capacityTonnes: 28, ratePerTonne: 380, truckType: 'Flatbed',      status: 'in-transit', bookingId: 'B02' },
+  { id: 'L05', ownerId: 'O2', origin: 'Ndola',       destination: 'Lusaka',      date: '2026-03-28', capacityTonnes: 18, ratePerTonne: 420, truckType: 'Curtain-side', status: 'delivered',  bookingId: 'B03' },
+  { id: 'L06', ownerId: 'O3', origin: 'Ndola',       destination: 'Solwezi',     date: '2026-04-10', capacityTonnes: 10, ratePerTonne: 550, truckType: 'Curtain-side', status: 'posted',     bookingId: null },
+  { id: 'L07', ownerId: 'O4', origin: 'Lusaka',      destination: 'Kabwe',       date: '2026-04-04', capacityTonnes: 25, ratePerTonne: 180, truckType: 'Flatbed',      status: 'paid',       bookingId: 'B04' },
+  { id: 'L08', ownerId: 'O1', origin: 'Lusaka',      destination: 'Mongu',       date: '2026-04-12', capacityTonnes: 14, ratePerTonne: 700, truckType: 'Flatbed',      status: 'posted',     bookingId: null },
+  { id: 'L09', ownerId: 'O5', origin: 'Choma',       destination: 'Lusaka',      date: '2026-04-06', capacityTonnes: 8,  ratePerTonne: 500, truckType: 'Refrigerated', status: 'posted',     bookingId: null },
+  { id: 'L10', ownerId: 'O2', origin: 'Kasama',      destination: 'Mpulungu',    date: '2026-04-15', capacityTonnes: 15, ratePerTonne: 350, truckType: 'Tipper',       status: 'posted',     bookingId: null },
+];
