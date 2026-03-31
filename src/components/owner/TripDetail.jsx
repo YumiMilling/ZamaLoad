@@ -135,6 +135,15 @@ export default function TripDetail() {
           )}
         </div>
       )}
+
+      {/* Back button */}
+      <button
+        className="btn btn--secondary"
+        onClick={() => dispatch({ type: 'NAV', view: 'ownerDash' })}
+        style={{ width: '100%', marginTop: 20 }}
+      >
+        Back to Dashboard
+      </button>
     </div>
   );
 }

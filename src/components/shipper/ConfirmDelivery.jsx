@@ -23,12 +23,16 @@ export default function ConfirmDelivery() {
   const owner = getUser(load.ownerId);
   const amount = booking.escrowAmount;
 
+  // Already paid — show success directly
+  const alreadyPaid = load.status === 'paid';
+
   const handleConfirm = () => {
+    if (load.status !== 'delivered') return; // guard: only confirm delivered loads
     dispatch({ type: 'ADVANCE_STATUS', loadId: load.id });
     setConfirmed(true);
   };
 
-  if (confirmed) {
+  if (confirmed || alreadyPaid) {
     return (
       <div
         className="animate-in"
@@ -100,6 +104,20 @@ export default function ConfirmDelivery() {
           className="btn btn--secondary"
           onClick={() => dispatch({ type: 'NAV', view: 'myBookings' })}
         >
+          Back to My Bookings
+        </button>
+      </div>
+    );
+  }
+
+  // Guard: only show confirm form for delivered loads
+  if (load.status !== 'delivered') {
+    return (
+      <div className="animate-in" style={{ textAlign: 'center', padding: '48px 0' }}>
+        <div style={{ fontFamily: FONT.body, fontSize: 16, color: C.dust, marginBottom: 20 }}>
+          This load is not ready for delivery confirmation yet.
+        </div>
+        <button className="btn btn--secondary" onClick={() => dispatch({ type: 'NAV', view: 'myBookings' })}>
           Back to My Bookings
         </button>
       </div>

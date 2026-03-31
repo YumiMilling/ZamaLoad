@@ -9,6 +9,7 @@ import LoadCard from '../shared/LoadCard';
 export default function OwnerDashboard() {
   const { state } = useApp();
   const user = getUser(state.userId);
+  if (!user) return <p style={{ padding: 20, color: C.dust }}>User not found.</p>;
 
   const myLoads = state.loads
     .filter(l => l.ownerId === state.userId)

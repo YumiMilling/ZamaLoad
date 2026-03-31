@@ -18,9 +18,12 @@ export default function PostLoadForm() {
   const set = (field) => (e) =>
     setForm((f) => ({ ...f, [field]: e.target.value }));
 
+  const today = new Date().toISOString().slice(0, 10);
+  const isValid = form.date && Number(form.capacityTonnes) > 0 && Number(form.ratePerTonne) > 0 && form.origin !== form.destination;
+
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!form.date || !form.capacityTonnes || !form.ratePerTonne) return;
+    if (!isValid) return;
     dispatch({
       type: 'ADD_LOAD',
       load: {
@@ -69,7 +72,7 @@ export default function PostLoadForm() {
 
         <label className="field">
           <span style={{ fontFamily: FONT.heading, fontSize: 13, color: C.dust }}>Date</span>
-          <input type="date" value={form.date} onChange={set('date')} />
+          <input type="date" value={form.date} onChange={set('date')} min={today} />
         </label>
 
         <label className="field">
@@ -103,7 +106,13 @@ export default function PostLoadForm() {
           </select>
         </label>
 
-        <button type="submit" className="btn btn--primary" style={{ marginTop: 16, width: '100%' }}>
+        {form.origin === form.destination && (
+          <div style={{ fontFamily: FONT.body, fontSize: 13, color: C.red, marginTop: 8 }}>
+            Origin and destination cannot be the same.
+          </div>
+        )}
+
+        <button type="submit" className="btn btn--primary" style={{ marginTop: 16, width: '100%', opacity: isValid ? 1 : 0.4 }} disabled={!isValid}>
           Post Load
         </button>
       </form>

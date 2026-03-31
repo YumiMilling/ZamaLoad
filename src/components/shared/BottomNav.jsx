@@ -64,14 +64,22 @@ const shipperTabs = [
   },
 ];
 
+// Map sub-views to their parent tab for highlighting
+const VIEW_TO_TAB = {
+  tripDetail: 'ownerDash',
+  loadDetail: 'browse',
+  confirmDelivery: 'myBookings',
+};
+
 export default function BottomNav() {
   const { state, dispatch } = useApp();
   const tabs = state.role === 'owner' ? ownerTabs : shipperTabs;
+  const activeTab = VIEW_TO_TAB[state.view] || state.view;
 
   return (
     <nav className="bottom-nav">
       {tabs.map(tab => {
-        const isActive = state.view === tab.key;
+        const isActive = activeTab === tab.key;
         return (
           <button
             key={tab.key}

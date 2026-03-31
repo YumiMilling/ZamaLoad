@@ -10,10 +10,12 @@ const initial = {
   userId: null,
   view: 'roleSelect', // current screen
   viewParams: {},
-  loads: initialLoads,
-  bookings: initialBookings,
+  loads: [...initialLoads],
+  bookings: [...initialBookings],
   users,
 };
+
+let idCounter = 100; // safe counter that never collides with mock data
 
 function reducer(state, action) {
   switch (action.type) {
@@ -24,14 +26,18 @@ function reducer(state, action) {
       return { ...state, view: action.view, viewParams: action.params || {} };
 
     case 'ADD_LOAD': {
-      const id = 'L' + String(state.loads.length + 1).padStart(2, '0');
-      const load = { ...action.load, id, ownerId: state.userId, status: 'posted', bookingId: null };
+      const id = 'L' + (++idCounter);
+      const cap = Number(action.load.capacityTonnes) || 0;
+      const rate = Number(action.load.ratePerTonne) || 0;
+      if (cap <= 0 || rate <= 0) return state;
+      const load = { ...action.load, id, capacityTonnes: cap, ratePerTonne: rate, ownerId: state.userId, status: 'posted', bookingId: null };
       return { ...state, loads: [load, ...state.loads], view: 'ownerDash' };
     }
 
     case 'BOOK_LOAD': {
-      const bid = 'B' + String(state.bookings.length + 1).padStart(2, '0');
       const load = state.loads.find(l => l.id === action.loadId);
+      if (!load || load.status !== 'posted') return state; // guard: only book posted loads
+      const bid = 'B' + (++idCounter);
       const booking = {
         id: bid, loadId: action.loadId, shipperId: state.userId, ownerId: load.ownerId,
         status: 'booked', bookedAt: new Date().toISOString().slice(0, 10),
@@ -47,10 +53,14 @@ function reducer(state, action) {
     }
 
     case 'ADVANCE_STATUS': {
-      const next = { posted: 'booked', booked: 'in-transit', 'in-transit': 'delivered', delivered: 'paid' };
       const load = state.loads.find(l => l.id === action.loadId);
+      if (!load) return state;
+      // Only allow: booked->in-transit, in-transit->delivered, delivered->paid
+      const next = { booked: 'in-transit', 'in-transit': 'delivered', delivered: 'paid' };
       const newStatus = next[load.status];
       if (!newStatus) return state;
+      // delivered->paid requires a booking to exist
+      if (load.status === 'delivered' && !load.bookingId) return state;
       return {
         ...state,
         loads: state.loads.map(l => l.id === action.loadId ? { ...l, status: newStatus } : l),
@@ -63,7 +73,8 @@ function reducer(state, action) {
     }
 
     case 'SWITCH_ROLE':
-      return { ...initial };
+      // Preserve loads/bookings across role switches
+      return { ...initial, loads: state.loads, bookings: state.bookings };
 
     default: return state;
   }

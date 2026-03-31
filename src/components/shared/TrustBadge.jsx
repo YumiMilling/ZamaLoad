@@ -19,7 +19,7 @@ export default function TrustBadge({ score, tier }) {
           marginRight: 6,
         }}
       />
-      {score.toFixed(2)} &middot; {t.label}
+      {(score ?? 0).toFixed(2)} &middot; {t.label}
     </span>
   );
 }

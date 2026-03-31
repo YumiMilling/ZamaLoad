@@ -7,6 +7,7 @@ import { getUser } from '../../data/mockUsers';
 export default function Earnings() {
   const { state } = useApp();
   const user = getUser(state.userId);
+  if (!user) return <p style={{ padding: 20, color: C.dust }}>User not found.</p>;
 
   const myBookings = state.bookings.filter(b => b.ownerId === state.userId);
   const paidBookings = myBookings.filter(b => b.status === 'paid');
