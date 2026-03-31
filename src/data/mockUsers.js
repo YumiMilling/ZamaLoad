@@ -6,6 +6,11 @@ export const users = [
   { id: 'O4', name: 'Moses Tembo',     role: 'owner',   phone: '+260 977 XXX XXX', location: 'Livingstone',truckType: 'Flatbed 30T',      truckCount: 3, trustScore: 0.65, tier: 'silver',  completedTrips: 21, memberSince: '2025-06' },
   { id: 'O5', name: 'Martha Zulu',     role: 'owner',   phone: '+260 962 XXX XXX', location: 'Choma',      truckType: 'Refrigerated 10T', truckCount: 1, trustScore: 0.15, tier: 'probation', completedTrips: 3, memberSince: '2026-03' },
 
+  // New owners
+  { id: 'O6', name: 'George Nyirenda', role: 'owner',   phone: '+260 979 XXX XXX', location: 'Chipata',     truckType: 'Flatbed 15T',      truckCount: 2, trustScore: 0.75, tier: 'gold',    completedTrips: 29, memberSince: '2025-04' },
+  { id: 'O7', name: 'Michael Kapata',  role: 'owner',   phone: '+260 971 XXX XXX', location: 'Solwezi',     truckType: 'Interlink 34T',    truckCount: 1, trustScore: 0.82, tier: 'gold',    completedTrips: 41, memberSince: '2025-02' },
+  { id: 'O8', name: 'David Mulenga',   role: 'owner',   phone: '+260 967 XXX XXX', location: 'Kabwe',       truckType: 'Flatbed 15T',      truckCount: 2, trustScore: 0.58, tier: 'silver',  completedTrips: 15, memberSince: '2025-10' },
+
   // Shippers
   { id: 'S1', name: 'Chilufya Trading',role: 'shipper', phone: '+260 978 XXX XXX', location: 'Lusaka',     business: 'General goods',      trustScore: 0.81, tier: 'gold',   completedTrips: 28, memberSince: '2025-05' },
   { id: 'S2', name: 'Mutale Farms',    role: 'shipper', phone: '+260 955 XXX XXX', location: 'Chipata',    business: 'Agricultural produce',trustScore: 0.55, tier: 'silver', completedTrips: 12, memberSince: '2025-09' },
