@@ -26,7 +26,7 @@ let idCounter = 100;
 function reducer(state, action) {
   switch (action.type) {
     case 'SET_ROLE':
-      return { ...state, role: action.role, userId: action.userId, view: action.role === 'owner' ? 'ownerDash' : 'shipperDash' };
+      return { ...state, role: action.role, userId: action.userId, view: action.role === 'owner' ? 'ownerDash' : 'findTruck' };
 
     case 'NAV':
       return { ...state, view: action.view, viewParams: action.params || {} };

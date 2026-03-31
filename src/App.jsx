@@ -10,6 +10,7 @@ import Earnings from './components/owner/Earnings';
 import MatchedRequests from './components/owner/MatchedRequests';
 import PlaceBid from './components/owner/PlaceBid';
 // Shipper screens
+import FindTruck from './components/shipper/FindTruck';
 import BrowseLoads from './components/shipper/BrowseLoads';
 import LoadDetail from './components/shipper/LoadDetail';
 import MyBookings from './components/shipper/MyBookings';
@@ -27,7 +28,8 @@ const SCREENS = {
   matchedRequests: MatchedRequests,
   placeBid: PlaceBid,
   // Shipper
-  shipperDash: BrowseLoads,
+  shipperDash: FindTruck,
+  findTruck: FindTruck,
   browse: BrowseLoads,
   loadDetail: LoadDetail,
   myBookings: MyBookings,
