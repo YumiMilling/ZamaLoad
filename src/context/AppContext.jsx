@@ -5,6 +5,7 @@ import { initialRequests } from '../data/mockRequests';
 import { initialBids } from '../data/mockBids';
 import { users } from '../data/mockUsers';
 import { INSURANCE_RATE } from '../theme';
+import { isCompatibleWithLoad } from '../data/cargoCategories';
 
 const Ctx = createContext();
 
@@ -37,7 +38,7 @@ function reducer(state, action) {
       const cap = Number(action.load.capacityTonnes) || 0;
       const rate = Number(action.load.ratePerTonne) || 0;
       if (cap <= 0 || rate <= 0) return state;
-      const load = { ...action.load, id, capacityTonnes: cap, ratePerTonne: rate, ownerId: state.userId, status: 'posted', bookingId: null };
+      const load = { ...action.load, id, capacityTonnes: cap, ratePerTonne: rate, ownerId: action.load.ownerId || state.userId, status: 'posted', bookingIds: [], bookedTonnes: 0 };
       return { ...state, loads: [load, ...state.loads], view: 'ownerDash' };
     }
 
@@ -120,25 +121,50 @@ function reducer(state, action) {
       };
     }
 
-    // ── Shipper books a posted truck directly ──
+    // ── Shipper books partial or full capacity on a truck ──
     case 'BOOK_LOAD': {
       const load = state.loads.find(l => l.id === action.loadId);
-      if (!load || load.status !== 'posted') return state;
+      if (!load || (load.status !== 'posted' && load.status !== 'booked')) return state;
+
+      const bookTonnes = Number(action.tonnes) || load.capacityTonnes - (load.bookedTonnes || 0);
+      const remaining = load.capacityTonnes - (load.bookedTonnes || 0);
+      if (bookTonnes <= 0 || bookTonnes > remaining) return state;
+
+      // Cargo compatibility check
+      const existingCategories = state.bookings
+        .filter(b => b.loadId === load.id && b.status !== 'cancelled')
+        .map(b => b.cargoCategory)
+        .filter(Boolean);
+      if (action.cargoCategory && !isCompatibleWithLoad(action.cargoCategory, existingCategories)) return state;
+
       const bid = 'B' + (++idCounter);
-      const cargoValue = load.capacityTonnes * load.ratePerTonne;
+      const cargoValue = bookTonnes * load.ratePerTonne;
       const insured = !!action.insured;
       const premium = insured ? Math.round(cargoValue * INSURANCE_RATE) : 0;
+
       const booking = {
         id: bid, loadId: action.loadId, shipperId: state.userId, ownerId: load.ownerId,
+        tonnes: bookTonnes,
+        cargoCategory: action.cargoCategory || 'general',
+        cargoDesc: action.cargoDesc || '',
         status: 'booked', bookedAt: new Date().toISOString().slice(0, 10),
         escrowAmount: cargoValue, insured, insurancePremium: premium,
         totalPaid: cargoValue + premium,
         deliveryConfirmed: false, paidAt: null,
       };
+
+      const newBookedTonnes = (load.bookedTonnes || 0) + bookTonnes;
+      const isFull = newBookedTonnes >= load.capacityTonnes;
+
       return {
         ...state,
         bookings: [booking, ...state.bookings],
-        loads: state.loads.map(l => l.id === action.loadId ? { ...l, status: 'booked', bookingId: bid } : l),
+        loads: state.loads.map(l => l.id === action.loadId ? {
+          ...l,
+          status: isFull ? 'full' : 'booked',
+          bookingIds: [...(l.bookingIds || []), bid],
+          bookedTonnes: newBookedTonnes,
+        } : l),
         view: 'myBookings',
       };
     }
@@ -146,7 +172,7 @@ function reducer(state, action) {
     case 'ADVANCE_STATUS': {
       const load = state.loads.find(l => l.id === action.loadId);
       if (!load) return state;
-      const next = { booked: 'in-transit', 'in-transit': 'delivered', delivered: 'paid' };
+      const next = { booked: 'in-transit', full: 'in-transit', 'in-transit': 'delivered', delivered: 'paid' };
       const newStatus = next[load.status];
       if (!newStatus) return state;
       if (load.status === 'delivered' && !load.bookingId) return state;

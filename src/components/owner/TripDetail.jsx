@@ -28,8 +28,7 @@ export default function TripDetail() {
     );
   }
 
-  const booking = state.bookings.find(b => b.loadId === load.id);
-  const shipper = booking ? getUser(booking.shipperId) : null;
+  const allBookings = state.bookings.filter(b => b.loadId === load.id && b.status !== 'cancelled');
   const truck = getTruck(load.truckId);
   const driver = getDriver(load.driverId);
   const totalValue = load.capacityTonnes * load.ratePerTonne;
@@ -123,9 +122,9 @@ export default function TripDetail() {
       </div>
 
       {/* Action buttons */}
-      {load.status === 'booked' && (
+      {(load.status === 'booked' || load.status === 'full') && (
         <button className="btn btn--primary" onClick={handleAdvance} style={{ width: '100%', marginBottom: 16 }}>
-          Mark In Transit
+          Start Trip — Mark In Transit
         </button>
       )}
       {load.status === 'in-transit' && (
@@ -134,29 +133,35 @@ export default function TripDetail() {
         </button>
       )}
 
-      {/* Shipper info */}
-      {shipper && (
+      {/* Cargo manifest — all shippers on this truck */}
+      {allBookings.length > 0 && (
         <div style={{ marginTop: 8 }}>
-          <div className="sec-label" style={{ marginBottom: 8 }}>Shipper</div>
-          <div
-            style={{
-              fontFamily: FONT.body,
-              fontSize: 14,
-              color: C.ink,
-              display: 'flex',
-              alignItems: 'center',
-              gap: 8,
-            }}
-          >
-            <span style={{ fontWeight: 600 }}>{shipper.name}</span>
-            <TrustBadge score={shipper.trustScore} tier={shipper.tier} />
+          <div className="sec-label" style={{ marginBottom: 8 }}>
+            Cargo Manifest ({allBookings.length} shipper{allBookings.length > 1 ? 's' : ''} &middot; {allBookings.reduce((s, b) => s + (b.tonnes || 0), 0)}T loaded)
           </div>
-          <div style={{ fontFamily: FONT.body, fontSize: 13, color: C.dust, marginTop: 4 }}>
-            {shipper.phone}
-          </div>
-          {booking && (
-            <div style={{ fontFamily: FONT.body, fontSize: 13, color: C.dust, marginTop: 2 }}>
-              Booked {booking.bookedAt} &middot; Escrow K{booking.escrowAmount.toLocaleString()}
+          {allBookings.map(b => {
+            const shipper = getUser(b.shipperId);
+            return (
+              <div key={b.id} style={{ background: C.white, border: `1px solid ${C.line}`, padding: 14, marginBottom: 6 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span style={{ fontFamily: FONT.body, fontSize: 15, fontWeight: 600, color: C.ink }}>{shipper?.name || 'Unknown'}</span>
+                    {shipper && <TrustBadge score={shipper.trustScore} tier={shipper.tier} />}
+                  </div>
+                  <span style={{ fontFamily: FONT.heading, fontSize: 16, fontWeight: 700, color: C.amberDk }}>{b.tonnes}T</span>
+                </div>
+                <div style={{ fontFamily: FONT.body, fontSize: 13, color: C.dust }}>
+                  {b.cargoDesc || 'General cargo'} &middot; K{b.escrowAmount.toLocaleString()} &middot; {b.bookedAt}
+                  {b.insured && <span style={{ color: '#1565c0', fontWeight: 600 }}> &middot; Insured</span>}
+                </div>
+              </div>
+            );
+          })}
+
+          {/* Remaining capacity */}
+          {(load.status === 'posted' || load.status === 'booked') && (load.capacityTonnes - (load.bookedTonnes || 0)) > 0 && (
+            <div style={{ fontFamily: FONT.body, fontSize: 13, color: C.green, fontWeight: 600, marginTop: 6 }}>
+              {load.capacityTonnes - (load.bookedTonnes || 0)}T still available — accepting more cargo
             </div>
           )}
         </div>

@@ -1,10 +1,11 @@
 // src/components/shipper/LoadDetail.jsx
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { C, FONT, INSURANCE_RATE } from '../../theme';
 import { useApp } from '../../context/AppContext';
 import { getUser } from '../../data/mockUsers';
 import { getTruck } from '../../data/mockTrucks';
 import { getDriver } from '../../data/mockDrivers';
+import { CARGO_CATEGORIES, isCompatibleWithLoad } from '../../data/cargoCategories';
 import StatusPill from '../shared/StatusPill';
 import TrustBadge from '../shared/TrustBadge';
 import TruckCard from '../shared/TruckCard';
@@ -28,8 +29,12 @@ export default function LoadDetail() {
   const truck = getTruck(load.truckId);
   const driver = getDriver(load.driverId);
   const totalValue = load.capacityTonnes * load.ratePerTonne;
-  const booking = state.bookings.find(b => b.loadId === load.id);
+  const myBooking = state.bookings.find(b => b.loadId === load.id && b.shipperId === state.userId);
+  const allBookings = state.bookings.filter(b => b.loadId === load.id && b.status !== 'cancelled');
   const isInTransit = load.status === 'in-transit';
+  const remaining = load.capacityTonnes - (load.bookedTonnes || 0);
+  const canBook = (load.status === 'posted' || load.status === 'booked') && remaining > 0;
+  const existingCategories = allBookings.map(b => b.cargoCategory).filter(Boolean);
 
   return (
     <div className="animate-in">
@@ -170,31 +175,59 @@ export default function LoadDetail() {
         </div>
       )}
 
-      {/* Action area */}
-      {load.status === 'posted' && <InsuranceBooking load={load} totalValue={totalValue} dispatch={dispatch} />}
+      {/* Capacity bar */}
+      <div style={{ background: C.white, border: `1px solid ${C.line}`, padding: 16, marginBottom: 16 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
+          <span style={{ fontFamily: FONT.heading, fontSize: 13, fontWeight: 700, color: C.dust, textTransform: 'uppercase', letterSpacing: '.06em' }}>Capacity</span>
+          <span style={{ fontFamily: FONT.body, fontSize: 14, fontWeight: 600, color: C.ink }}>
+            {load.bookedTonnes || 0}T / {load.capacityTonnes}T booked
+          </span>
+        </div>
+        <div style={{ height: 10, background: '#e8e6e1', borderRadius: 5, overflow: 'hidden' }}>
+          <div style={{
+            width: `${Math.min(100, ((load.bookedTonnes || 0) / load.capacityTonnes) * 100)}%`,
+            height: '100%', background: remaining > 0 ? C.amber : '#7c3aed', borderRadius: 5, transition: 'width .3s',
+          }} />
+        </div>
+        <div style={{ fontFamily: FONT.body, fontSize: 13, color: remaining > 0 ? C.green : '#7c3aed', marginTop: 4, fontWeight: 600 }}>
+          {remaining > 0 ? `${remaining}T available` : 'Truck is full'}
+        </div>
 
-      {load.status !== 'posted' && booking && (
-        <div style={{ marginBottom: 12 }}>
-          <div
-            style={{
-              background: C.greenLt,
-              padding: 16,
-              fontFamily: FONT.body,
-              fontSize: 14,
-              color: C.green,
-              textAlign: 'center',
-              fontWeight: 600,
-              marginBottom: booking.insured ? 8 : 0,
-            }}
-          >
-            Booking {booking.id} &mdash; <StatusPill status={load.status} />
+        {/* Existing cargo on this truck */}
+        {allBookings.length > 0 && (
+          <div style={{ marginTop: 12, borderTop: `1px solid ${C.line}`, paddingTop: 10 }}>
+            <div style={{ fontFamily: FONT.body, fontSize: 12, color: C.dust, marginBottom: 6, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '.06em' }}>
+              Cargo on this truck
+            </div>
+            {allBookings.map(b => {
+              const cat = CARGO_CATEGORIES.find(c => c.id === b.cargoCategory);
+              return (
+                <div key={b.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', fontFamily: FONT.body, fontSize: 13 }}>
+                  <span style={{ color: C.ink }}>{b.cargoDesc || cat?.label || 'Unknown'}</span>
+                  <span style={{ color: C.dust, fontWeight: 600 }}>{b.tonnes}T</span>
+                </div>
+              );
+            })}
           </div>
-          {booking.insured && (
-            <div style={{
-              background: '#e3f2fd', padding: 10, textAlign: 'center',
-              fontFamily: FONT.body, fontSize: 13, color: '#1565c0', fontWeight: 600,
-            }}>
-              Cargo insured &mdash; Premium K{booking.insurancePremium.toLocaleString()}
+        )}
+      </div>
+
+      {/* Booking form — consolidated */}
+      {canBook && <ConsolidatedBooking load={load} remaining={remaining} existingCategories={existingCategories} dispatch={dispatch} />}
+
+      {/* My booking status */}
+      {myBooking && (
+        <div style={{ marginBottom: 12 }}>
+          <div style={{
+            background: C.greenLt, padding: 16, fontFamily: FONT.body, fontSize: 14,
+            color: C.green, textAlign: 'center', fontWeight: 600,
+            marginBottom: myBooking.insured ? 8 : 0,
+          }}>
+            Your booking: {myBooking.tonnes}T {myBooking.cargoDesc} &mdash; <StatusPill status={myBooking.status} />
+          </div>
+          {myBooking.insured && (
+            <div style={{ background: '#e3f2fd', padding: 10, textAlign: 'center', fontFamily: FONT.body, fontSize: 13, color: '#1565c0', fontWeight: 600 }}>
+              Cargo insured &mdash; Premium K{myBooking.insurancePremium.toLocaleString()}
             </div>
           )}
         </div>
@@ -210,67 +243,102 @@ export default function LoadDetail() {
   );
 }
 
-function InsuranceBooking({ load, totalValue, dispatch }) {
+function ConsolidatedBooking({ load, remaining, existingCategories, dispatch }) {
+  const [tonnes, setTonnes] = useState(remaining);
+  const [cargoCategory, setCargoCategory] = useState('general');
+  const [cargoDesc, setCargoDesc] = useState('');
   const [insured, setInsured] = useState(false);
-  const premium = Math.round(totalValue * INSURANCE_RATE);
-  const total = insured ? totalValue + premium : totalValue;
+
+  const compatible = isCompatibleWithLoad(cargoCategory, existingCategories);
+  const t = Number(tonnes) || 0;
+  const cargoValue = t * load.ratePerTonne;
+  const premium = insured ? Math.round(cargoValue * INSURANCE_RATE) : 0;
+  const total = cargoValue + premium;
+  const isValid = t > 0 && t <= remaining && compatible;
+
+  const selectedCat = CARGO_CATEGORIES.find(c => c.id === cargoCategory);
 
   return (
-    <div style={{ marginBottom: 12 }}>
+    <div style={{ background: C.white, border: `1px solid ${C.line}`, padding: 18, marginBottom: 16 }}>
+      <div style={{ fontFamily: FONT.heading, fontSize: 16, fontWeight: 700, color: C.ink, marginBottom: 14, textTransform: 'uppercase', letterSpacing: '.04em' }}>
+        Book Space on This Truck
+      </div>
+
+      {/* Tonnes */}
+      <div className="field">
+        <label>How many tonnes?</label>
+        <input type="number" min="0.5" max={remaining} step="0.5" value={tonnes}
+          onChange={e => setTonnes(e.target.value)}
+          style={{ fontFamily: FONT.heading, fontSize: 20, fontWeight: 700 }}
+        />
+        <div style={{ fontFamily: FONT.body, fontSize: 12, color: C.dust, marginTop: 2 }}>
+          Max {remaining}T available at K{load.ratePerTonne}/T
+        </div>
+      </div>
+
+      {/* Cargo category */}
+      <div className="field">
+        <label>Cargo type</label>
+        <select value={cargoCategory} onChange={e => setCargoCategory(e.target.value)}>
+          {CARGO_CATEGORIES.map(c => (
+            <option key={c.id} value={c.id}>{c.label} — {c.examples}</option>
+          ))}
+        </select>
+      </div>
+
+      {/* Compatibility warning */}
+      {!compatible && (
+        <div style={{ background: C.redLt, padding: 12, marginBottom: 12, fontFamily: FONT.body, fontSize: 14, color: C.red, fontWeight: 600 }}>
+          {selectedCat?.label || 'This cargo'} cannot share a truck with the existing cargo on this load. Choose a different truck or cargo type.
+        </div>
+      )}
+
+      {/* Cargo description */}
+      <div className="field">
+        <label>Description (optional)</label>
+        <input type="text" placeholder="e.g. 200 bags of cement" value={cargoDesc} onChange={e => setCargoDesc(e.target.value)} />
+      </div>
+
       {/* Insurance toggle */}
       <div
         onClick={() => setInsured(v => !v)}
         style={{
-          background: insured ? '#e3f2fd' : C.white,
-          border: `2px solid ${insured ? '#1565c0' : C.line}`,
-          padding: 16, marginBottom: 12, cursor: 'pointer',
-          display: 'flex', alignItems: 'flex-start', gap: 12,
-          transition: 'all .15s',
+          background: insured ? '#e3f2fd' : C.paper, border: `1px solid ${insured ? '#1565c0' : C.line}`,
+          padding: 12, marginBottom: 14, cursor: 'pointer',
+          display: 'flex', alignItems: 'center', gap: 10,
         }}
       >
-        {/* Checkbox */}
         <div style={{
-          width: 22, height: 22, borderRadius: 4, flexShrink: 0, marginTop: 1,
+          width: 20, height: 20, borderRadius: 4, flexShrink: 0,
           border: `2px solid ${insured ? '#1565c0' : C.line}`,
           background: insured ? '#1565c0' : 'transparent',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
         }}>
-          {insured && (
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M5 12l5 5L19 7"/>
-            </svg>
-          )}
+          {insured && <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3"><path d="M5 12l5 5L19 7"/></svg>}
         </div>
         <div>
-          <div style={{ fontFamily: FONT.heading, fontSize: 16, fontWeight: 700, color: insured ? '#1565c0' : C.ink }}>
+          <div style={{ fontFamily: FONT.heading, fontSize: 14, fontWeight: 700, color: insured ? '#1565c0' : C.ink }}>
             Insure this cargo
           </div>
-          <div style={{ fontFamily: FONT.body, fontSize: 13, color: C.dust, marginTop: 2 }}>
-            Covers damage or loss during transit. Premium: <strong style={{ color: C.ink }}>K{premium.toLocaleString()}</strong> ({(INSURANCE_RATE * 100).toFixed(1)}% of cargo value)
+          <div style={{ fontFamily: FONT.body, fontSize: 12, color: C.dust }}>
+            Premium: K{premium.toLocaleString()} ({(INSURANCE_RATE * 100).toFixed(1)}%)
           </div>
         </div>
       </div>
 
-      {/* Price summary */}
-      {insured && (
-        <div style={{ background: C.white, padding: 14, marginBottom: 12, border: `1px solid ${C.line}` }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontFamily: FONT.body, fontSize: 14, color: C.dust, marginBottom: 4 }}>
-            <span>Cargo value</span><span>K{totalValue.toLocaleString()}</span>
-          </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontFamily: FONT.body, fontSize: 14, color: '#1565c0', marginBottom: 4 }}>
-            <span>Insurance premium</span><span>K{premium.toLocaleString()}</span>
-          </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontFamily: FONT.heading, fontSize: 18, fontWeight: 700, color: C.ink, borderTop: `1px solid ${C.line}`, paddingTop: 8, marginTop: 4 }}>
-            <span>Total</span><span>K{total.toLocaleString()}</span>
-          </div>
-        </div>
-      )}
+      {/* Total */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 0', borderTop: `1px solid ${C.line}`, marginBottom: 14 }}>
+        <span style={{ fontFamily: FONT.heading, fontSize: 16, fontWeight: 700, color: C.ink }}>Total</span>
+        <span style={{ fontFamily: FONT.heading, fontSize: 22, fontWeight: 900, color: C.amberDk }}>K{total.toLocaleString()}</span>
+      </div>
 
       <button
         className="btn btn--primary"
-        onClick={() => dispatch({ type: 'BOOK_LOAD', loadId: load.id, insured })}
+        style={{ width: '100%', opacity: isValid ? 1 : 0.4 }}
+        disabled={!isValid}
+        onClick={() => dispatch({ type: 'BOOK_LOAD', loadId: load.id, tonnes: t, cargoCategory, cargoDesc, insured })}
       >
-        Book This Load &mdash; K{total.toLocaleString()}
+        Book {t}T &mdash; K{total.toLocaleString()}
       </button>
     </div>
   );
