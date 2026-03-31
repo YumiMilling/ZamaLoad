@@ -67,9 +67,15 @@ export default function MyBookings() {
             Insured
           </div>
         )}
+        {booking.status === 'in-transit' && (
+          <div style={{ marginTop: 8, fontFamily: FONT.body, fontSize: 13, color: C.amber, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 6 }}>
+            <div style={{ width: 7, height: 7, borderRadius: '50%', background: C.green, animation: 'pulse 2s infinite' }} />
+            Live — Tap to track
+          </div>
+        )}
         {booking.status === 'delivered' && (
           <div style={{ marginTop: 8, fontFamily: FONT.body, fontSize: 13, color: C.green, fontWeight: 600 }}>
-            Tap to confirm delivery
+            Tap to confirm delivery &amp; release payment
           </div>
         )}
         {claim && (

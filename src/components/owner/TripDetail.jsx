@@ -11,6 +11,7 @@ import TruckCard from '../shared/TruckCard';
 import DriverCard from '../shared/DriverCard';
 import LiveMap from '../shared/LiveMap';
 import TripCostBreakdown from '../shared/TripCostBreakdown';
+import TripUpdates from '../shared/TripUpdates';
 import { getRouteTolls } from '../../data/routeData';
 
 const STEPS = ['posted', 'booked', 'in-transit', 'delivered', 'paid'];
@@ -59,6 +60,11 @@ export default function TripDetail() {
 
       {/* Live tracking map */}
       <LiveMap origin={load.origin} destination={load.destination} isActive={isInTransit} tollGates={getRouteTolls(load.origin, load.destination)} />
+
+      {/* Trip updates — owner can post during transit */}
+      {(load.status === 'in-transit' || load.status === 'delivered' || load.status === 'paid') && (
+        <TripUpdates loadId={load.id} canPost={load.status === 'in-transit'} />
+      )}
 
       {/* Trip cost breakdown */}
       <TripCostBreakdown origin={load.origin} destination={load.destination} truckType={load.truckType} cargoValue={totalValue} />

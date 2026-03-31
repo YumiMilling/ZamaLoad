@@ -19,6 +19,7 @@ const initial = {
   requests: [...initialRequests],
   bids: [...initialBids],
   claims: [],
+  tripUpdates: [], // { id, loadId, authorId, authorRole, message, type: 'status'|'delay'|'location', timestamp }
   users,
 };
 
@@ -190,6 +191,22 @@ function reducer(state, action) {
       };
     }
 
+    // ── Trip status update (owner/driver posts during transit) ──
+    case 'POST_TRIP_UPDATE': {
+      const load = state.loads.find(l => l.id === action.loadId);
+      if (!load || load.status !== 'in-transit') return state;
+      const update = {
+        id: 'U' + (++idCounter),
+        loadId: action.loadId,
+        authorId: state.userId,
+        authorRole: state.role,
+        message: action.message,
+        type: action.updateType || 'status',
+        timestamp: new Date().toISOString(),
+      };
+      return { ...state, tripUpdates: [update, ...state.tripUpdates] };
+    }
+
     // Shipper confirms delivery — this is the attestation that triggers payment
     case 'CONFIRM_DELIVERY': {
       const load = state.loads.find(l => l.id === action.loadId);
@@ -230,7 +247,7 @@ function reducer(state, action) {
       };
 
     case 'SWITCH_ROLE':
-      return { ...initial, loads: state.loads, bookings: state.bookings, requests: state.requests, bids: state.bids, claims: state.claims };
+      return { ...initial, loads: state.loads, bookings: state.bookings, requests: state.requests, bids: state.bids, claims: state.claims, tripUpdates: state.tripUpdates };
 
     default: return state;
   }

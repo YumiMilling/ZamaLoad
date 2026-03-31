@@ -11,6 +11,7 @@ import TrustBadge from '../shared/TrustBadge';
 import TruckCard from '../shared/TruckCard';
 import DriverCard from '../shared/DriverCard';
 import LiveMap from '../shared/LiveMap';
+import TripUpdates from '../shared/TripUpdates';
 
 export default function LoadDetail() {
   const { state, dispatch } = useApp();
@@ -155,6 +156,11 @@ export default function LoadDetail() {
       {/* Live tracking map — shown for booked/in-transit loads */}
       {(load.status === 'in-transit' || load.status === 'booked') && (
         <LiveMap origin={load.origin} destination={load.destination} isActive={isInTransit} />
+      )}
+
+      {/* Trip updates — shipper can view (not post) */}
+      {(load.status === 'in-transit' || load.status === 'delivered' || load.status === 'paid') && (
+        <TripUpdates loadId={load.id} canPost={false} />
       )}
 
       {/* Truck & Driver details */}
