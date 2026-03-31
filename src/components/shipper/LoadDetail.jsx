@@ -3,8 +3,13 @@ import React, { useState } from 'react';
 import { C, FONT, INSURANCE_RATE } from '../../theme';
 import { useApp } from '../../context/AppContext';
 import { getUser } from '../../data/mockUsers';
+import { getTruck } from '../../data/mockTrucks';
+import { getDriver } from '../../data/mockDrivers';
 import StatusPill from '../shared/StatusPill';
 import TrustBadge from '../shared/TrustBadge';
+import TruckCard from '../shared/TruckCard';
+import DriverCard from '../shared/DriverCard';
+import LiveMap from '../shared/LiveMap';
 
 export default function LoadDetail() {
   const { state, dispatch } = useApp();
@@ -20,8 +25,11 @@ export default function LoadDetail() {
   }
 
   const owner = getUser(load.ownerId);
+  const truck = getTruck(load.truckId);
+  const driver = getDriver(load.driverId);
   const totalValue = load.capacityTonnes * load.ratePerTonne;
   const booking = state.bookings.find(b => b.loadId === load.id);
+  const isInTransit = load.status === 'in-transit';
 
   return (
     <div className="animate-in">
@@ -136,6 +144,29 @@ export default function LoadDetail() {
               Member since <strong style={{ color: C.ink }}>{owner.memberSince}</strong>
             </span>
           </div>
+        </div>
+      )}
+
+      {/* Live tracking map — shown for booked/in-transit loads */}
+      {(load.status === 'in-transit' || load.status === 'booked') && (
+        <LiveMap origin={load.origin} destination={load.destination} isActive={isInTransit} />
+      )}
+
+      {/* Truck & Driver details */}
+      {(truck || driver) && (
+        <div style={{ marginBottom: 20 }}>
+          {truck && (
+            <div style={{ marginBottom: 8 }}>
+              <div className="sec-label">Truck</div>
+              <TruckCard truck={truck} />
+            </div>
+          )}
+          {driver && (
+            <div>
+              <div className="sec-label">Driver</div>
+              <DriverCard driver={driver} />
+            </div>
+          )}
         </div>
       )}
 

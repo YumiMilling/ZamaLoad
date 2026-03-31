@@ -3,8 +3,13 @@ import React from 'react';
 import { C, FONT } from '../../theme';
 import { useApp } from '../../context/AppContext';
 import { getUser } from '../../data/mockUsers';
+import { getTruck } from '../../data/mockTrucks';
+import { getDriver } from '../../data/mockDrivers';
 import StatusPill from '../shared/StatusPill';
 import TrustBadge from '../shared/TrustBadge';
+import TruckCard from '../shared/TruckCard';
+import DriverCard from '../shared/DriverCard';
+import LiveMap from '../shared/LiveMap';
 
 const STEPS = ['posted', 'booked', 'in-transit', 'delivered', 'paid'];
 const STEP_LABELS = { posted: 'Posted', booked: 'Booked', 'in-transit': 'In Transit', delivered: 'Delivered', paid: 'Paid' };
@@ -23,8 +28,11 @@ export default function TripDetail() {
 
   const booking = state.bookings.find(b => b.loadId === load.id);
   const shipper = booking ? getUser(booking.shipperId) : null;
+  const truck = getTruck(load.truckId);
+  const driver = getDriver(load.driverId);
   const totalValue = load.capacityTonnes * load.ratePerTonne;
   const currentIdx = STEPS.indexOf(load.status);
+  const isInTransit = load.status === 'in-transit';
 
   const handleAdvance = () => {
     dispatch({ type: 'ADVANCE_STATUS', loadId: load.id });
@@ -46,6 +54,19 @@ export default function TripDetail() {
 
       <div style={{ marginBottom: 16 }}>
         <StatusPill status={load.status} />
+      </div>
+
+      {/* Live tracking map */}
+      <LiveMap origin={load.origin} destination={load.destination} isActive={isInTransit} />
+
+      {/* Truck & Driver */}
+      <div style={{ marginBottom: 16 }}>
+        <div className="sec-label">Truck</div>
+        <TruckCard truck={truck} compact />
+      </div>
+      <div style={{ marginBottom: 20 }}>
+        <div className="sec-label">Driver</div>
+        <DriverCard driver={driver} compact />
       </div>
 
       <div
