@@ -133,6 +133,7 @@ export default function DemoWalkthrough({ onExit }) {
   const { dispatch } = useApp();
   const [step, setStep] = useState(0);
   const [transitioning, setTransitioning] = useState(false);
+  const [collapsed, setCollapsed] = useState(false);
 
   const current = STEPS[step];
   const isLast = step === STEPS.length - 1;
@@ -165,7 +166,8 @@ export default function DemoWalkthrough({ onExit }) {
       position: 'fixed', bottom: 0, left: '50%', transform: 'translateX(-50%)',
       width: '100%', maxWidth: 480, zIndex: 200,
       background: C.asphalt, borderTop: `3px solid ${C.amber}`,
-      padding: '0', boxShadow: '0 -8px 30px rgba(0,0,0,.4)',
+      boxShadow: '0 -8px 30px rgba(0,0,0,.4)',
+      transition: 'transform .3s ease',
     }}>
       {/* Progress bar */}
       <div style={{ height: 3, background: '#333' }}>
@@ -175,57 +177,62 @@ export default function DemoWalkthrough({ onExit }) {
         }} />
       </div>
 
-      <div style={{ padding: '16px 20px 14px' }}>
-        {/* Step counter */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-          <span style={{ fontFamily: FONT.heading, fontSize: 11, fontWeight: 700, color: C.amber, textTransform: 'uppercase', letterSpacing: '.1em' }}>
-            Demo — Step {step + 1} of {STEPS.length}
+      {/* Collapsed bar — always visible */}
+      <div
+        onClick={() => setCollapsed(c => !c)}
+        style={{ padding: '10px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }}
+      >
+        <span style={{ fontFamily: FONT.heading, fontSize: 12, fontWeight: 700, color: C.amber, textTransform: 'uppercase', letterSpacing: '.1em' }}>
+          {step + 1}/{STEPS.length} — {current.title}
+        </span>
+        <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+          <span style={{ fontFamily: FONT.body, fontSize: 11, color: '#8a8070' }}>
+            {collapsed ? 'Tap to expand' : 'Tap to collapse'}
           </span>
-          <button onClick={onExit} style={{
-            background: 'none', border: 'none', cursor: 'pointer',
-            fontFamily: FONT.body, fontSize: 12, color: '#8a8070',
-          }}>
-            Exit Demo
-          </button>
-        </div>
-
-        {/* Title */}
-        <div style={{
-          fontFamily: FONT.heading, fontSize: 18, fontWeight: 700, color: '#fff',
-          marginBottom: 6, opacity: transitioning ? 0 : 1, transition: 'opacity .2s',
-        }}>
-          {current.title}
-        </div>
-
-        {/* Narration */}
-        <div style={{
-          fontFamily: FONT.body, fontSize: 14, color: '#b0a898', lineHeight: 1.6,
-          marginBottom: 14, minHeight: 44,
-          opacity: transitioning ? 0 : 1, transition: 'opacity .2s',
-        }}>
-          {current.text}
-        </div>
-
-        {/* Navigation */}
-        <div style={{ display: 'flex', gap: 8 }}>
-          {!isFirst && (
-            <button onClick={goBack} style={{
-              flex: 0, padding: '10px 18px', background: '#333', border: 'none',
-              fontFamily: FONT.heading, fontSize: 14, fontWeight: 700, color: '#8a8070',
-              cursor: 'pointer', textTransform: 'uppercase', letterSpacing: '.06em',
-            }}>
-              Back
-            </button>
-          )}
-          <button onClick={advance} style={{
-            flex: 1, padding: '12px 20px', background: C.amber, border: 'none',
-            fontFamily: FONT.heading, fontSize: 15, fontWeight: 700, color: C.asphalt,
-            cursor: 'pointer', textTransform: 'uppercase', letterSpacing: '.06em',
-          }}>
-            {isLast ? 'Finish Demo' : 'Next →'}
-          </button>
+          <span style={{ color: C.amber, fontSize: 14 }}>{collapsed ? '▲' : '▼'}</span>
         </div>
       </div>
+
+      {/* Expandable content */}
+      {!collapsed && (
+        <div style={{ padding: '0 20px 14px' }}>
+          {/* Narration */}
+          <div style={{
+            fontFamily: FONT.body, fontSize: 14, color: '#b0a898', lineHeight: 1.6,
+            marginBottom: 14,
+            opacity: transitioning ? 0 : 1, transition: 'opacity .2s',
+          }}>
+            {current.text}
+          </div>
+
+          {/* Navigation */}
+          <div style={{ display: 'flex', gap: 8 }}>
+            {!isFirst && (
+              <button onClick={goBack} style={{
+                flex: 0, padding: '10px 18px', background: '#333', border: 'none',
+                fontFamily: FONT.heading, fontSize: 14, fontWeight: 700, color: '#8a8070',
+                cursor: 'pointer', textTransform: 'uppercase', letterSpacing: '.06em',
+              }}>
+                Back
+              </button>
+            )}
+            <button onClick={advance} style={{
+              flex: 1, padding: '12px 20px', background: C.amber, border: 'none',
+              fontFamily: FONT.heading, fontSize: 15, fontWeight: 700, color: C.asphalt,
+              cursor: 'pointer', textTransform: 'uppercase', letterSpacing: '.06em',
+            }}>
+              {isLast ? 'Finish Demo' : 'Next →'}
+            </button>
+            <button onClick={onExit} style={{
+              flex: 0, padding: '10px 14px', background: '#333', border: 'none',
+              fontFamily: FONT.heading, fontSize: 12, fontWeight: 700, color: '#8a8070',
+              cursor: 'pointer', textTransform: 'uppercase', letterSpacing: '.06em',
+            }}>
+              Exit
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
