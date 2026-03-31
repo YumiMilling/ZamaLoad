@@ -10,6 +10,7 @@ import TrustBadge from '../shared/TrustBadge';
 import TruckCard from '../shared/TruckCard';
 import DriverCard from '../shared/DriverCard';
 import LiveMap from '../shared/LiveMap';
+import TripCostBreakdown from '../shared/TripCostBreakdown';
 
 const STEPS = ['posted', 'booked', 'in-transit', 'delivered', 'paid'];
 const STEP_LABELS = { posted: 'Posted', booked: 'Booked', 'in-transit': 'In Transit', delivered: 'Delivered', paid: 'Paid' };
@@ -58,6 +59,9 @@ export default function TripDetail() {
 
       {/* Live tracking map */}
       <LiveMap origin={load.origin} destination={load.destination} isActive={isInTransit} />
+
+      {/* Trip cost breakdown */}
+      <TripCostBreakdown origin={load.origin} destination={load.destination} truckType={load.truckType} cargoValue={totalValue} />
 
       {/* Truck & Driver */}
       <div style={{ marginBottom: 16 }}>
