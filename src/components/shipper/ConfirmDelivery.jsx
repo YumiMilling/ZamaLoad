@@ -31,7 +31,7 @@ export default function ConfirmDelivery() {
 
   const handleConfirm = () => {
     if (load.status !== 'delivered') return; // guard: only confirm delivered loads
-    dispatch({ type: 'ADVANCE_STATUS', loadId: load.id });
+    dispatch({ type: 'CONFIRM_DELIVERY', loadId: load.id });
     setConfirmed(true);
   };
 

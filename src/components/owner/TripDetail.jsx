@@ -128,9 +128,14 @@ export default function TripDetail() {
         </button>
       )}
       {load.status === 'in-transit' && (
-        <button className="btn btn--success" onClick={handleAdvance} style={{ width: '100%', marginBottom: 16 }}>
-          Mark Delivered
-        </button>
+        <div style={{ background: '#fef3c7', padding: 14, marginBottom: 16, fontFamily: FONT.body, fontSize: 14, color: C.amberDk, textAlign: 'center' }}>
+          <strong>Waiting for shipper confirmation.</strong> The shipper(s) will confirm delivery and release payment. You cannot mark this as delivered yourself.
+        </div>
+      )}
+      {load.status === 'delivered' && (
+        <div style={{ background: C.greenLt, padding: 14, marginBottom: 16, fontFamily: FONT.body, fontSize: 14, color: C.green, textAlign: 'center', fontWeight: 600 }}>
+          Delivery confirmed by shipper. Payment released.
+        </div>
       )}
 
       {/* Cargo manifest — all shippers on this truck */}

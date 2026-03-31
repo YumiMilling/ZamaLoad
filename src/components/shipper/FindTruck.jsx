@@ -24,6 +24,7 @@ export default function FindTruck() {
     tonnes: '',
     cargoCategory: 'general',
     cargoDesc: '',
+    dedicated: false, // true = full truck, false = ok with sharing
   });
   const [searched, setSearched] = useState(false);
 
@@ -40,6 +41,8 @@ export default function FindTruck() {
       .filter(l => (l.status === 'posted' || l.status === 'booked'))
       .filter(l => l.origin === form.origin && l.destination === form.destination)
       .filter(l => (l.capacityTonnes - (l.bookedTonnes || 0)) >= tonnes)
+      // If dedicated: only show trucks with zero existing bookings
+      .filter(l => !form.dedicated || (l.bookedTonnes || 0) === 0)
       .map(l => {
         const owner = getUser(l.ownerId);
         const truck = getTruck(l.truckId);
@@ -118,6 +121,30 @@ export default function FindTruck() {
         <div className="field">
           <label>Description (optional)</label>
           <input type="text" placeholder="e.g. 300 bags of cement" value={form.cargoDesc} onChange={set('cargoDesc')} />
+        </div>
+
+        {/* Dedicated vs consolidated */}
+        <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
+          <button type="button"
+            onClick={() => setForm(f => ({ ...f, dedicated: false }))}
+            style={{
+              flex: 1, padding: '12px 8px', border: `2px solid ${!form.dedicated ? C.amber : C.line}`,
+              background: !form.dedicated ? '#fef3c7' : C.white, cursor: 'pointer',
+              fontFamily: FONT.heading, fontSize: 13, fontWeight: 700, color: !form.dedicated ? C.amberDk : C.dust,
+              textTransform: 'uppercase', letterSpacing: '.04em', textAlign: 'center',
+            }}>
+            Share truck (cheaper)
+          </button>
+          <button type="button"
+            onClick={() => setForm(f => ({ ...f, dedicated: true }))}
+            style={{
+              flex: 1, padding: '12px 8px', border: `2px solid ${form.dedicated ? C.amber : C.line}`,
+              background: form.dedicated ? '#fef3c7' : C.white, cursor: 'pointer',
+              fontFamily: FONT.heading, fontSize: 13, fontWeight: 700, color: form.dedicated ? C.amberDk : C.dust,
+              textTransform: 'uppercase', letterSpacing: '.04em', textAlign: 'center',
+            }}>
+            Dedicated truck
+          </button>
         </div>
 
         <button type="submit" className="btn btn--primary" style={{ width: '100%', opacity: isValid ? 1 : 0.4 }} disabled={!isValid}>

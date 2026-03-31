@@ -169,13 +169,16 @@ function reducer(state, action) {
       };
     }
 
+    // Owner can only: booked/full → in-transit
+    // Shipper confirms: in-transit → delivered (via CONFIRM_DELIVERY)
+    // Payment: delivered → paid (via CONFIRM_DELIVERY)
     case 'ADVANCE_STATUS': {
       const load = state.loads.find(l => l.id === action.loadId);
       if (!load) return state;
-      const next = { booked: 'in-transit', full: 'in-transit', 'in-transit': 'delivered', delivered: 'paid' };
-      const newStatus = next[load.status];
+      // Owner can only start the trip
+      const ownerNext = { booked: 'in-transit', full: 'in-transit' };
+      const newStatus = ownerNext[load.status];
       if (!newStatus) return state;
-      if (load.status === 'delivered' && !load.bookingId) return state;
       return {
         ...state,
         loads: state.loads.map(l => l.id === action.loadId ? { ...l, status: newStatus } : l),
@@ -183,6 +186,21 @@ function reducer(state, action) {
           ...b, status: newStatus,
           deliveryConfirmed: newStatus === 'paid' ? true : b.deliveryConfirmed,
           paidAt: newStatus === 'paid' ? new Date().toISOString().slice(0, 10) : b.paidAt,
+        } : b),
+      };
+    }
+
+    // Shipper confirms delivery — this is the attestation that triggers payment
+    case 'CONFIRM_DELIVERY': {
+      const load = state.loads.find(l => l.id === action.loadId);
+      if (!load || load.status !== 'in-transit') return state;
+      return {
+        ...state,
+        loads: state.loads.map(l => l.id === action.loadId ? { ...l, status: 'delivered' } : l),
+        bookings: state.bookings.map(b => b.loadId === action.loadId ? {
+          ...b, status: 'paid',
+          deliveryConfirmed: true,
+          paidAt: new Date().toISOString().slice(0, 10),
         } : b),
       };
     }
