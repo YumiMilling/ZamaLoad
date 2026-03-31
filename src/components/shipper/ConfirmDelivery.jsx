@@ -1,12 +1,15 @@
 // src/components/shipper/ConfirmDelivery.jsx
 import React, { useState } from 'react';
-import { C, FONT } from '../../theme';
+import { C, FONT, CLAIM_STATUS } from '../../theme';
 import { useApp } from '../../context/AppContext';
 import { getUser } from '../../data/mockUsers';
 
 export default function ConfirmDelivery() {
   const { state, dispatch } = useApp();
   const [confirmed, setConfirmed] = useState(false);
+  const [showClaimForm, setShowClaimForm] = useState(false);
+  const [claimReason, setClaimReason] = useState('');
+  const [claimFiled, setClaimFiled] = useState(false);
 
   const loadId = state.viewParams.loadId;
   const load = state.loads.find(l => l.id === loadId);
@@ -192,6 +195,18 @@ export default function ConfirmDelivery() {
         <strong>{owner ? owner.name : 'the owner'}</strong>.
       </div>
 
+      {/* Insurance info */}
+      {booking.insured && (
+        <div style={{
+          background: '#e3f2fd', padding: 14, marginBottom: 20,
+          fontFamily: FONT.body, fontSize: 14, color: '#1565c0',
+          display: 'flex', alignItems: 'center', gap: 8,
+        }}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 22 12 18.27 5.82 22 7 14.14l-5-4.87 6.91-1.01z"/></svg>
+          <span>This cargo is <strong>insured</strong>. You can report damage before confirming.</span>
+        </div>
+      )}
+
       {/* Confirm button */}
       <button
         className="btn btn--success"
@@ -201,11 +216,75 @@ export default function ConfirmDelivery() {
         Confirm Delivery &amp; Release Payment
       </button>
 
+      {/* Report Damage — only for insured loads */}
+      {booking.insured && !claimFiled && !showClaimForm && (
+        <button
+          className="btn btn--secondary"
+          onClick={() => setShowClaimForm(true)}
+          style={{ marginBottom: 12, borderColor: C.red, color: C.red }}
+        >
+          Report Cargo Damage
+        </button>
+      )}
+
+      {/* Claim form */}
+      {showClaimForm && !claimFiled && (
+        <div style={{ background: C.redLt, padding: 20, marginBottom: 12 }}>
+          <div style={{ fontFamily: FONT.heading, fontSize: 16, fontWeight: 700, color: C.red, marginBottom: 10 }}>
+            Report Damage
+          </div>
+          <div className="field">
+            <label style={{ color: C.dust }}>Describe the damage</label>
+            <textarea
+              value={claimReason}
+              onChange={(e) => setClaimReason(e.target.value)}
+              placeholder="e.g. 3 bags of cement burst during transit, water damage to 2 pallets..."
+              rows={3}
+              style={{
+                width: '100%', padding: '12px 14px', fontFamily: FONT.body, fontSize: 15,
+                background: C.white, border: `1px solid ${C.line}`, color: C.ink,
+                resize: 'vertical', outline: 'none',
+              }}
+            />
+          </div>
+          <div style={{ fontFamily: FONT.body, fontSize: 13, color: C.dust, marginBottom: 12 }}>
+            A claim will be filed for the full cargo value of <strong style={{ color: C.ink }}>K{amount.toLocaleString()}</strong>. The claim will be reviewed before payout.
+          </div>
+          <button
+            className="btn btn--danger"
+            disabled={!claimReason.trim()}
+            style={{ marginBottom: 8, opacity: claimReason.trim() ? 1 : 0.4 }}
+            onClick={() => {
+              dispatch({ type: 'FILE_CLAIM', bookingId: booking.id, reason: claimReason.trim() });
+              setClaimFiled(true);
+              setShowClaimForm(false);
+            }}
+          >
+            File Insurance Claim
+          </button>
+          <button className="btn btn--secondary" onClick={() => setShowClaimForm(false)}>
+            Cancel
+          </button>
+        </div>
+      )}
+
+      {/* Claim filed confirmation */}
+      {claimFiled && (
+        <div style={{ background: '#fef3c7', padding: 16, marginBottom: 12, textAlign: 'center' }}>
+          <div style={{ fontFamily: FONT.heading, fontSize: 16, fontWeight: 700, color: '#b07810', marginBottom: 4 }}>
+            Claim Filed
+          </div>
+          <div style={{ fontFamily: FONT.body, fontSize: 13, color: C.dust }}>
+            Your damage claim is under review. You will be notified of the outcome.
+          </div>
+        </div>
+      )}
+
       <button
         className="btn btn--secondary"
         onClick={() => dispatch({ type: 'NAV', view: 'myBookings' })}
       >
-        Cancel
+        Back to My Bookings
       </button>
     </div>
   );

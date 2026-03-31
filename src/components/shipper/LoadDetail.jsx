@@ -1,6 +1,6 @@
 // src/components/shipper/LoadDetail.jsx
-import React from 'react';
-import { C, FONT } from '../../theme';
+import React, { useState } from 'react';
+import { C, FONT, INSURANCE_RATE } from '../../theme';
 import { useApp } from '../../context/AppContext';
 import { getUser } from '../../data/mockUsers';
 import StatusPill from '../shared/StatusPill';
@@ -140,30 +140,32 @@ export default function LoadDetail() {
       )}
 
       {/* Action area */}
-      {load.status === 'posted' && (
-        <button
-          className="btn btn--primary"
-          onClick={() => dispatch({ type: 'BOOK_LOAD', loadId: load.id })}
-          style={{ marginBottom: 12 }}
-        >
-          Book This Load &mdash; K{totalValue.toLocaleString()}
-        </button>
-      )}
+      {load.status === 'posted' && <InsuranceBooking load={load} totalValue={totalValue} dispatch={dispatch} />}
 
       {load.status !== 'posted' && booking && (
-        <div
-          style={{
-            background: C.greenLt,
-            padding: 16,
-            marginBottom: 12,
-            fontFamily: FONT.body,
-            fontSize: 14,
-            color: C.green,
-            textAlign: 'center',
-            fontWeight: 600,
-          }}
-        >
-          Booking {booking.id} &mdash; <StatusPill status={load.status} />
+        <div style={{ marginBottom: 12 }}>
+          <div
+            style={{
+              background: C.greenLt,
+              padding: 16,
+              fontFamily: FONT.body,
+              fontSize: 14,
+              color: C.green,
+              textAlign: 'center',
+              fontWeight: 600,
+              marginBottom: booking.insured ? 8 : 0,
+            }}
+          >
+            Booking {booking.id} &mdash; <StatusPill status={load.status} />
+          </div>
+          {booking.insured && (
+            <div style={{
+              background: '#e3f2fd', padding: 10, textAlign: 'center',
+              fontFamily: FONT.body, fontSize: 13, color: '#1565c0', fontWeight: 600,
+            }}>
+              Cargo insured &mdash; Premium K{booking.insurancePremium.toLocaleString()}
+            </div>
+          )}
         </div>
       )}
 
@@ -172,6 +174,72 @@ export default function LoadDetail() {
         onClick={() => dispatch({ type: 'NAV', view: 'browse' })}
       >
         Back to Browse
+      </button>
+    </div>
+  );
+}
+
+function InsuranceBooking({ load, totalValue, dispatch }) {
+  const [insured, setInsured] = useState(false);
+  const premium = Math.round(totalValue * INSURANCE_RATE);
+  const total = insured ? totalValue + premium : totalValue;
+
+  return (
+    <div style={{ marginBottom: 12 }}>
+      {/* Insurance toggle */}
+      <div
+        onClick={() => setInsured(v => !v)}
+        style={{
+          background: insured ? '#e3f2fd' : C.white,
+          border: `2px solid ${insured ? '#1565c0' : C.line}`,
+          padding: 16, marginBottom: 12, cursor: 'pointer',
+          display: 'flex', alignItems: 'flex-start', gap: 12,
+          transition: 'all .15s',
+        }}
+      >
+        {/* Checkbox */}
+        <div style={{
+          width: 22, height: 22, borderRadius: 4, flexShrink: 0, marginTop: 1,
+          border: `2px solid ${insured ? '#1565c0' : C.line}`,
+          background: insured ? '#1565c0' : 'transparent',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+        }}>
+          {insured && (
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M5 12l5 5L19 7"/>
+            </svg>
+          )}
+        </div>
+        <div>
+          <div style={{ fontFamily: FONT.heading, fontSize: 16, fontWeight: 700, color: insured ? '#1565c0' : C.ink }}>
+            Insure this cargo
+          </div>
+          <div style={{ fontFamily: FONT.body, fontSize: 13, color: C.dust, marginTop: 2 }}>
+            Covers damage or loss during transit. Premium: <strong style={{ color: C.ink }}>K{premium.toLocaleString()}</strong> ({(INSURANCE_RATE * 100).toFixed(1)}% of cargo value)
+          </div>
+        </div>
+      </div>
+
+      {/* Price summary */}
+      {insured && (
+        <div style={{ background: C.white, padding: 14, marginBottom: 12, border: `1px solid ${C.line}` }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontFamily: FONT.body, fontSize: 14, color: C.dust, marginBottom: 4 }}>
+            <span>Cargo value</span><span>K{totalValue.toLocaleString()}</span>
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontFamily: FONT.body, fontSize: 14, color: '#1565c0', marginBottom: 4 }}>
+            <span>Insurance premium</span><span>K{premium.toLocaleString()}</span>
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontFamily: FONT.heading, fontSize: 18, fontWeight: 700, color: C.ink, borderTop: `1px solid ${C.line}`, paddingTop: 8, marginTop: 4 }}>
+            <span>Total</span><span>K{total.toLocaleString()}</span>
+          </div>
+        </div>
+      )}
+
+      <button
+        className="btn btn--primary"
+        onClick={() => dispatch({ type: 'BOOK_LOAD', loadId: load.id, insured })}
+      >
+        Book This Load &mdash; K{total.toLocaleString()}
       </button>
     </div>
   );

@@ -33,6 +33,16 @@ export const TRUST_TIERS = {
   diamond:   { color: '#0D9488', label: 'Diamond', bg: '#F0FDFA' },
 };
 
+// Insurance
+export const INSURANCE_RATE = 0.025; // 2.5% of cargo value
+
+// Claim status config
+export const CLAIM_STATUS = {
+  pending:  { label: 'Under Review', color: '#b07810', bg: '#fef3c7' },
+  approved: { label: 'Approved',     color: '#2e7d32', bg: '#e8f5e9' },
+  rejected: { label: 'Rejected',     color: '#c62828', bg: '#ffebee' },
+};
+
 // Load status config
 export const STATUS = {
   posted:     { label: 'Posted',     color: C.dust,    bg: '#f0ece4' },

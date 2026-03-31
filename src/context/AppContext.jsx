@@ -2,20 +2,22 @@ import { createContext, useContext, useReducer } from 'react';
 import { initialLoads } from '../data/mockLoads';
 import { initialBookings } from '../data/mockBookings';
 import { users } from '../data/mockUsers';
+import { INSURANCE_RATE } from '../theme';
 
 const Ctx = createContext();
 
 const initial = {
-  role: null,         // 'owner' | 'shipper'
+  role: null,
   userId: null,
-  view: 'roleSelect', // current screen
+  view: 'roleSelect',
   viewParams: {},
   loads: [...initialLoads],
   bookings: [...initialBookings],
+  claims: [], // { id, bookingId, loadId, shipperId, reason, status: pending|approved|rejected, filedAt, resolvedAt, payoutAmount }
   users,
 };
 
-let idCounter = 100; // safe counter that never collides with mock data
+let idCounter = 100;
 
 function reducer(state, action) {
   switch (action.type) {
@@ -36,12 +38,18 @@ function reducer(state, action) {
 
     case 'BOOK_LOAD': {
       const load = state.loads.find(l => l.id === action.loadId);
-      if (!load || load.status !== 'posted') return state; // guard: only book posted loads
+      if (!load || load.status !== 'posted') return state;
       const bid = 'B' + (++idCounter);
+      const cargoValue = load.capacityTonnes * load.ratePerTonne;
+      const insured = !!action.insured;
+      const premium = insured ? Math.round(cargoValue * INSURANCE_RATE) : 0;
       const booking = {
         id: bid, loadId: action.loadId, shipperId: state.userId, ownerId: load.ownerId,
         status: 'booked', bookedAt: new Date().toISOString().slice(0, 10),
-        escrowAmount: load.capacityTonnes * load.ratePerTonne,
+        escrowAmount: cargoValue,
+        insured,
+        insurancePremium: premium,
+        totalPaid: cargoValue + premium,
         deliveryConfirmed: false, paidAt: null,
       };
       return {
@@ -55,11 +63,9 @@ function reducer(state, action) {
     case 'ADVANCE_STATUS': {
       const load = state.loads.find(l => l.id === action.loadId);
       if (!load) return state;
-      // Only allow: booked->in-transit, in-transit->delivered, delivered->paid
       const next = { booked: 'in-transit', 'in-transit': 'delivered', delivered: 'paid' };
       const newStatus = next[load.status];
       if (!newStatus) return state;
-      // delivered->paid requires a booking to exist
       if (load.status === 'delivered' && !load.bookingId) return state;
       return {
         ...state,
@@ -72,9 +78,42 @@ function reducer(state, action) {
       };
     }
 
+    case 'FILE_CLAIM': {
+      const booking = state.bookings.find(b => b.id === action.bookingId);
+      if (!booking || !booking.insured) return state;
+      // Can only file on delivered or paid loads
+      const load = state.loads.find(l => l.id === booking.loadId);
+      if (!load || (load.status !== 'delivered' && load.status !== 'paid')) return state;
+      // Prevent duplicate claims
+      if (state.claims.some(c => c.bookingId === action.bookingId)) return state;
+      const claim = {
+        id: 'CL' + (++idCounter),
+        bookingId: booking.id,
+        loadId: booking.loadId,
+        shipperId: booking.shipperId,
+        reason: action.reason || 'Cargo damage during transit',
+        status: 'pending',
+        filedAt: new Date().toISOString().slice(0, 10),
+        resolvedAt: null,
+        payoutAmount: booking.escrowAmount, // full cargo value
+      };
+      return { ...state, claims: [claim, ...state.claims], view: 'myBookings' };
+    }
+
+    case 'RESOLVE_CLAIM': {
+      const approved = action.approved;
+      return {
+        ...state,
+        claims: state.claims.map(c => c.id === action.claimId ? {
+          ...c,
+          status: approved ? 'approved' : 'rejected',
+          resolvedAt: new Date().toISOString().slice(0, 10),
+        } : c),
+      };
+    }
+
     case 'SWITCH_ROLE':
-      // Preserve loads/bookings across role switches
-      return { ...initial, loads: state.loads, bookings: state.bookings };
+      return { ...initial, loads: state.loads, bookings: state.bookings, claims: state.claims };
 
     default: return state;
   }

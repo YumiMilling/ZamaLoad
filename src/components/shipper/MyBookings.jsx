@@ -1,6 +1,6 @@
 // src/components/shipper/MyBookings.jsx
 import React from 'react';
-import { C, FONT } from '../../theme';
+import { C, FONT, CLAIM_STATUS } from '../../theme';
 import { useApp } from '../../context/AppContext';
 import StatusPill from '../shared/StatusPill';
 
@@ -24,6 +24,7 @@ export default function MyBookings() {
   const BookingRow = ({ booking }) => {
     const load = getLoad(booking.loadId);
     if (!load) return null;
+    const claim = state.claims.find(c => c.bookingId === booking.id);
 
     return (
       <div
@@ -60,17 +61,26 @@ export default function MyBookings() {
             K{booking.escrowAmount.toLocaleString()}
           </span>
         </div>
+        {booking.insured && (
+          <div style={{ marginTop: 6, fontFamily: FONT.body, fontSize: 12, color: '#1565c0', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4 }}>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 22 12 18.27 5.82 22 7 14.14l-5-4.87 6.91-1.01z"/></svg>
+            Insured
+          </div>
+        )}
         {booking.status === 'delivered' && (
-          <div
-            style={{
-              marginTop: 8,
-              fontFamily: FONT.body,
-              fontSize: 13,
-              color: C.green,
-              fontWeight: 600,
-            }}
-          >
+          <div style={{ marginTop: 8, fontFamily: FONT.body, fontSize: 13, color: C.green, fontWeight: 600 }}>
             Tap to confirm delivery
+          </div>
+        )}
+        {claim && (
+          <div style={{
+            marginTop: 6, fontFamily: FONT.body, fontSize: 12, fontWeight: 600,
+            color: CLAIM_STATUS[claim.status].color,
+            background: CLAIM_STATUS[claim.status].bg,
+            display: 'inline-flex', alignItems: 'center', gap: 4,
+            padding: '2px 8px', borderRadius: 100,
+          }}>
+            Claim: {CLAIM_STATUS[claim.status].label}
           </div>
         )}
       </div>
