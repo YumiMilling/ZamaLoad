@@ -14,7 +14,7 @@ export default function MyBookings() {
   const getLoad = (loadId) => state.loads.find(l => l.id === loadId);
 
   const handleTap = (booking) => {
-    if (booking.status === 'delivered') {
+    if (booking.status === 'in-transit') {
       dispatch({ type: 'NAV', view: 'confirmDelivery', params: { loadId: booking.loadId } });
     } else {
       dispatch({ type: 'NAV', view: 'loadDetail', params: { loadId: booking.loadId } });
@@ -73,9 +73,9 @@ export default function MyBookings() {
             Live — Tap to track
           </div>
         )}
-        {booking.status === 'delivered' && (
-          <div style={{ marginTop: 8, fontFamily: FONT.body, fontSize: 13, color: C.green, fontWeight: 600 }}>
-            Tap to confirm delivery &amp; release payment
+        {booking.status === 'in-transit' && !state.tripUpdates?.some(u => u.loadId === booking.loadId && u.type === 'arrival') && (
+          <div style={{ marginTop: 8, fontFamily: FONT.body, fontSize: 13, color: C.amber, fontWeight: 600 }}>
+            Tap to track &amp; confirm delivery when arrived
           </div>
         )}
         {claim && (

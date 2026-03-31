@@ -45,10 +45,18 @@ export const CLAIM_STATUS = {
 
 // Load status config
 export const STATUS = {
-  posted:     { label: 'Open',       color: C.dust,    bg: '#f0ece4' },
-  booked:     { label: 'Booked',     color: C.amber,   bg: '#fef3c7' },
-  full:       { label: 'Full',       color: '#7c3aed', bg: '#ede9fe' },
-  'in-transit':{ label: 'In Transit', color: C.amberDk, bg: '#fef3c7' },
-  delivered:  { label: 'Delivered',  color: C.green,   bg: '#e8f5e9' },
-  paid:       { label: 'Paid',       color: '#1b5e20', bg: '#c8e6c9' },
+  posted:       { label: 'Open',        color: C.dust,    bg: '#f0ece4' },
+  booked:       { label: 'Booked',      color: C.amber,   bg: '#fef3c7' },
+  full:         { label: 'Full',        color: '#7c3aed', bg: '#ede9fe' },
+  'in-transit': { label: 'In Transit',  color: C.amberDk, bg: '#fef3c7' },
+  delivered:    { label: 'Delivered',   color: C.green,   bg: '#e8f5e9' },
+  paid:         { label: 'Paid',        color: '#1b5e20', bg: '#c8e6c9' },
+  // Request statuses
+  open:         { label: 'Open',        color: C.amber,   bg: '#fef3c7' },
+  matched:      { label: 'Matched',     color: C.green,   bg: '#e8f5e9' },
+  // Bid statuses
+  pending:      { label: 'Pending',     color: C.amber,   bg: '#fef3c7' },
+  accepted:     { label: 'Accepted',    color: C.green,   bg: '#e8f5e9' },
+  declined:     { label: 'Declined',    color: C.red,     bg: '#ffebee' },
+  cancelled:    { label: 'Cancelled',   color: C.dust,    bg: '#f0ece4' },
 };

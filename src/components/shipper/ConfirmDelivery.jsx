@@ -26,16 +26,16 @@ export default function ConfirmDelivery() {
   const owner = getUser(load.ownerId);
   const amount = booking.escrowAmount;
 
-  // Already paid — show success directly
-  const alreadyPaid = load.status === 'paid';
+  // Already confirmed — show success directly
+  const alreadyDone = load.status === 'delivered' || load.status === 'paid';
 
   const handleConfirm = () => {
-    if (load.status !== 'delivered') return; // guard: only confirm delivered loads
+    if (load.status !== 'in-transit') return;
     dispatch({ type: 'CONFIRM_DELIVERY', loadId: load.id });
     setConfirmed(true);
   };
 
-  if (confirmed || alreadyPaid) {
+  if (confirmed || alreadyDone) {
     return (
       <div
         className="animate-in"
@@ -113,8 +113,8 @@ export default function ConfirmDelivery() {
     );
   }
 
-  // Guard: only show confirm form for delivered loads
-  if (load.status !== 'delivered') {
+  // Guard: only show confirm form for in-transit loads
+  if (load.status !== 'in-transit') {
     return (
       <div className="animate-in" style={{ textAlign: 'center', padding: '48px 0' }}>
         <div style={{ fontFamily: FONT.body, fontSize: 16, color: C.dust, marginBottom: 20 }}>

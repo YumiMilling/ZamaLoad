@@ -68,6 +68,9 @@ const VIEW_TO_TAB = {
   loadDetail: 'findTruck',
   shipperDash: 'findTruck',
   browse: 'findTruck',
+  postRequest: 'findTruck',
+  myRequests: 'myBookings',
+  viewBids: 'myBookings',
   confirmDelivery: 'myBookings',
 };
 

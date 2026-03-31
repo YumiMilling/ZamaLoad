@@ -48,7 +48,7 @@ export default function PostLoadForm() {
           margin: '0 0 20px',
         }}
       >
-        Post a Load
+        List Your Truck
       </h1>
 
       <form onSubmit={handleSubmit}>
