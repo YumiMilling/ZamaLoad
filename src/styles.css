@@ -12,19 +12,28 @@ body {
   line-height: 1.6;
 }
 
-/* Phone frame */
+/* App frame — responsive */
 .app-frame {
-  max-width: 420px;
+  max-width: 480px;
   margin: 0 auto;
   min-height: 100vh;
   background: #f4f0e8;
   position: relative;
-  overflow-x: hidden;
 }
-@media (min-width: 480px) {
+@media (min-width: 520px) {
   .app-frame {
-    min-height: 100vh;
     box-shadow: 0 0 60px rgba(0,0,0,.3);
+    border-left: 1px solid #d4cfc4;
+    border-right: 1px solid #d4cfc4;
+  }
+}
+/* On wide screens, show full width */
+@media (min-width: 900px) {
+  body { background: #f4f0e8; }
+  .app-frame {
+    max-width: 600px;
+    box-shadow: none;
+    border: none;
   }
 }
 
@@ -81,11 +90,14 @@ body {
   left: 50%;
   transform: translateX(-50%);
   width: 100%;
-  max-width: 420px;
+  max-width: 480px;
   background: #1a1a1a;
   display: flex;
   z-index: 50;
   border-top: 1px solid #333;
+}
+@media (min-width: 900px) {
+  .bottom-nav { max-width: 600px; }
 }
 .nav-tab {
   flex: 1;
