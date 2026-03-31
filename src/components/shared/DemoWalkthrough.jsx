@@ -94,19 +94,21 @@ const STEPS = [
     text: 'Let\'s switch back to the shipper. Chilufya Trading can see the live map, ETA, and all driver updates from their phone.',
     action: (dispatch) => {
       dispatch({ type: 'SET_ROLE', role: 'shipper', userId: 'S1' });
+      // Navigate to loadDetail to show the live map
+      setTimeout(() => dispatch({ type: 'NAV', view: 'loadDetail', params: { loadId: 'L01' } }), 50);
     },
   },
   {
     title: 'Live tracking — shipper view',
-    text: 'The shipper sees the truck on the map with ETA. They see the driver\'s updates: "Passed Kafue — on schedule." Trust in action.',
-    action: (dispatch) => {
-      dispatch({ type: 'NAV', view: 'confirmDelivery', params: { loadId: 'L01' } });
-    },
+    text: 'The shipper sees the truck moving on the map in real time, ETA to Choma, and the driver\'s updates: "Passed Kafue — on schedule." This is trust in action.',
+    action: null, // stay on loadDetail so they can see the map
   },
   {
     title: 'Delivery confirmation',
     text: 'The truck arrives in Choma. The shipper — not the driver — confirms delivery. This is the trust attestation that triggers payment.',
-    action: null,
+    action: (dispatch) => {
+      dispatch({ type: 'NAV', view: 'confirmDelivery', params: { loadId: 'L01' } });
+    },
   },
   {
     title: 'Payment released!',
