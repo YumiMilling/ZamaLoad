@@ -51,9 +51,28 @@ export default function App() {
 
   const Screen = SCREENS[state.view];
 
+  // Demo welcome screen when no role is set yet
+  const DemoWelcome = () => (
+    <div style={{ textAlign: 'center', padding: '60px 24px' }}>
+      <svg width="64" height="64" viewBox="0 0 48 48" fill="none" style={{ marginBottom: 20 }}>
+        <rect x="4" y="16" width="28" height="16" rx="2" fill="#e8a020" />
+        <rect x="32" y="20" width="12" height="12" rx="2" fill="#e8a020" />
+        <path d="M38 20l6 6v6h-6V20z" fill="#b07810" />
+        <circle cx="14" cy="34" r="4" fill="#1a1a1a" stroke="#e8a020" strokeWidth="2" />
+        <circle cx="38" cy="34" r="4" fill="#1a1a1a" stroke="#e8a020" strokeWidth="2" />
+      </svg>
+      <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 36, fontWeight: 900, color: '#1a1a1a', textTransform: 'uppercase', letterSpacing: '.02em' }}>
+        Zama<span style={{ color: '#e8a020' }}>Load</span>
+      </div>
+      <div style={{ fontFamily: "'Barlow', sans-serif", fontSize: 16, color: '#8a8070', marginTop: 8, lineHeight: 1.6 }}>
+        A freight marketplace for Zambia.<br/>Every truck working. Every payment secure.
+      </div>
+    </div>
+  );
+
   return (
     <AppShell>
-      {Screen ? <Screen /> : <div style={{ padding: 40, textAlign: 'center', color: '#8a8070' }}>Screen not found</div>}
+      {Screen ? <Screen /> : <DemoWelcome />}
       {demoMode && (
         <DemoWalkthrough onExit={() => {
           setDemoMode(false);
