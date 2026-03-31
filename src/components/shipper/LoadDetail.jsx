@@ -235,9 +235,9 @@ export default function LoadDetail() {
 
       <button
         className="btn btn--secondary"
-        onClick={() => dispatch({ type: 'NAV', view: 'browse' })}
+        onClick={() => dispatch({ type: 'NAV', view: 'findTruck' })}
       >
-        Back to Browse
+        Back to Search
       </button>
     </div>
   );
